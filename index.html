@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Life System Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0f;color:#e8e4d9;font-family:'Georgia',serif;min-height:100vh}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a0a0f}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+
+#header{background:#0d0d16;border-bottom:1px solid #1a1a28;padding:14px 16px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start}
+#site-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:#c9a84c;letter-spacing:-0.5px}
+#site-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#444;margin-top:2px}
+.header-right{display:flex;gap:8px;align-items:center}
+.streak-badge{background:#1a1a24;border:1px solid #c9a84c33;border-radius:8px;padding:6px 10px;text-align:center}
+.streak-num{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:#c9a84c;line-height:1}
+.streak-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#555;margin-top:2px}
+#progress-row{display:flex;justify-content:space-between;margin:10px 0 5px}
+#progress-row span{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666}
+#progress-pct{color:#22c55e;font-weight:bold}
+#progress-bar-wrap{height:3px;background:#1a1a24;border-radius:2px;overflow:hidden}
+#progress-bar-fill{height:100%;width:0%;background:#22c55e;border-radius:2px;transition:width .5s,background .5s}
+
+#nav{display:flex;overflow-x:auto;background:#0d0d16;border-bottom:1px solid #1a1a28;padding:0 4px;position:sticky;top:98px;z-index:99}
+#nav::-webkit-scrollbar{height:0}
+.nav-btn{background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;padding:8px 12px;color:#666;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;transition:all .2s;font-family:'IBM Plex Mono',monospace}
+.nav-btn:hover{background:#1a1a24;color:#e8e4d9}
+.nav-btn.active{background:#1a1a24;color:#c9a84c;border-bottom:2px solid #c9a84c}
+.nav-icon{font-size:16px}
+
+#content{padding:16px;max-width:600px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+.section-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#c9a84c;margin-bottom:3px}
+.section-sub{color:#555;font-size:12px;margin-bottom:14px}
+.card{background:#0f0f18;border:1px solid #1a1a28;border-radius:10px;padding:16px;margin-bottom:14px}
+.check-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1a1a24;cursor:pointer;transition:opacity .2s;user-select:none}
+.check-row:last-child{border-bottom:none}
+.check-row:hover{opacity:.8}
+.check-box{width:20px;height:20px;border:1.5px solid #333;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:12px;color:#0a0a0f}
+.check-box.done{background:#c9a84c;border-color:#c9a84c}
+.check-label{font-size:14px;transition:all .2s}
+.check-label.done{text-decoration:line-through;color:#444}
+.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin:14px 0 5px}
+.field-label:first-child{margin-top:0}
+textarea,input,select{background:#111118;border:1px solid #1e1e2e;border-radius:6px;padding:9px 11px;color:#e8e4d9;font-family:'Georgia',serif;font-size:13px;width:100%;line-height:1.6;outline:none;transition:border .2s}
+textarea{resize:none}
+textarea:focus,input:focus,select:focus{border-color:#c9a84c44}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23666' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+#reading-extra{display:none}
+
+#final-check-btn{display:flex;align-items:center;gap:12px;background:#0f0f18;border:2px solid #1a1a28;border-radius:10px;padding:16px;cursor:pointer;transition:all .3s;width:100%;margin-top:6px}
+#final-check-btn.done{border-color:#22c55e}
+#final-check-label{font-size:14px;font-weight:bold;transition:color .3s}
+
+
+/* HISTORY SECTION */
+.history-day{background:#0f0f18;border:1px solid #1a1a28;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.history-day-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none}
+.history-day-header:hover{background:#111118}
+.history-date{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c9a84c}
+.history-pct{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:bold}
+.history-body{display:none;padding:12px 16px;border-top:1px solid #1a1a28}
+.history-body.open{display:block}
+.history-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1a1a2288;font-size:12px}
+.history-row:last-child{border-bottom:none}
+.history-key{color:#666;font-family:'IBM Plex Mono',monospace;font-size:10px}
+.history-val{color:#e8e4d9;max-width:60%;text-align:right;word-break:break-word}
+
+/* EXPORT */
+.export-btn{display:flex;align-items:center;gap:8px;background:#111118;border:1px solid #1e1e2e;border-radius:8px;padding:12px 16px;cursor:pointer;width:100%;margin-bottom:10px;color:#e8e4d9;font-size:13px;font-family:'Georgia',serif;transition:border .2s}
+.export-btn:hover{border-color:#c9a84c44}
+.export-icon{font-size:20px}
+.export-info{text-align:left}
+.export-title{font-weight:bold;font-size:13px}
+.export-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#555;margin-top:2px}
+.empty-state{text-align:center;color:#333;padding:40px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+/* Study multi-task styles */
+.study-task-card{background:#0f0f18;border:1px solid #1a1a28;border-radius:10px;padding:14px;margin-bottom:10px;position:relative}
+.study-task-card.done-card{opacity:.55}
+.study-task-name{font-size:14px;font-weight:bold;color:#e8e4d9;line-height:1.4;flex:1}
+.study-task-name.done-name{text-decoration:line-through;color:#555}
+.study-task-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid}
+.tag-high{color:#ef4444;border-color:#ef444433;background:#ef44440d}
+.tag-medium{color:#f59e0b;border-color:#f59e0b33;background:#f59e0b0d}
+.tag-low{color:#22c55e;border-color:#22c55e33;background:#22c55e0d}
+.tag-status{color:#a78bfa;border-color:#a78bfa33;background:#a78bfa0d}
+.tag-deadline{color:#60a5fa;border-color:#60a5fa33;background:#60a5fa0d}
+.study-task-notes{font-size:12px;color:#666;margin-top:6px;line-height:1.5}
+.study-task-actions{display:flex;gap:6px;margin-top:10px}
+.task-btn{flex:1;background:#111118;border:1px solid #1e1e2e;border-radius:6px;color:#999;font-size:11px;padding:6px 0;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all .2s}
+.task-btn:hover{border-color:#c9a84c44;color:#e8e4d9}
+.task-btn.done-btn{color:#22c55e;border-color:#22c55e33}
+.task-btn.del-btn:hover{border-color:#ef444433;color:#ef4444}
+.study-empty{text-align:center;color:#333;padding:30px 20px;font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px dashed #1a1a28;border-radius:10px;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="header-top">
+    <div>
+      <div id="site-title">Life System</div>
+      <div id="site-date"></div>
+    </div>
+    <div class="header-right">
+      <div class="streak-badge">
+        <div class="streak-num" id="streak-num">0</div>
+        <div class="streak-label">🔥 STREAK</div>
+      </div>
+    </div>
+  </div>
+  <div id="progress-row"><span>PROGRESS HARI INI</span><span id="progress-pct">0%</span></div>
+  <div id="progress-bar-wrap"><div id="progress-bar-fill"></div></div>
+</div>
+
+<div id="nav">
+  <button class="nav-btn active" onclick="showSection('ibadah',this)"><span class="nav-icon">🕌</span>Ibadah</button>
+  <button class="nav-btn" onclick="showSection('reading',this)"><span class="nav-icon">📚</span>Reading</button>
+  <button class="nav-btn" onclick="showSection('execution',this)"><span class="nav-icon">🚀</span>Execution</button>
+  <button class="nav-btn" onclick="showSection('learning',this)"><span class="nav-icon">🎯</span>Learning</button>
+  <button class="nav-btn" onclick="showSection('study',this)"><span class="nav-icon">📖</span>Study</button>
+  <button class="nav-btn" onclick="showSection('control',this)"><span class="nav-icon">🧠</span>Control</button>
+  <button class="nav-btn" onclick="showSection('history',this)"><span class="nav-icon">📅</span>History</button>
+  <button class="nav-btn" onclick="showSection('export',this)"><span class="nav-icon">📤</span>Export</button>
+</div>
+
+<div id="content">
+
+  <!-- IBADAH -->
+  <div class="section active" id="sec-ibadah">
+    <div class="section-title">🕌 Ibadah Tracker</div>
+    <div class="section-sub">Checklist sholat & ibadah harian</div>
+    <div class="card">
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','subuh')"><div class="check-box"></div><span class="check-label">Subuh</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','dhuha')"><div class="check-box"></div><span class="check-label">Dhuha</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','dzuhur')"><div class="check-box"></div><span class="check-label">Dzuhur</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','ashar')"><div class="check-box"></div><span class="check-label">Ashar</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','maghrib')"><div class="check-box"></div><span class="check-label">Maghrib</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','isya')"><div class="check-box"></div><span class="check-label">Isya</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'ibadah','tahajud')"><div class="check-box"></div><span class="check-label">Tahajud</span></div>
+    </div>
+    <div class="field-label">📝 Daily Notes</div>
+    <textarea rows="3" placeholder="Kenapa ada yang bolong? Apa yang perlu diperbaiki?" oninput="saveField('ibadah','notes',this.value)" id="ibadah-notes"></textarea>
+  </div>
+
+  <!-- READING -->
+  <div class="section" id="sec-reading">
+    <div class="section-title">📚 Reading Tracker</div>
+    <div class="section-sub">Semua buku yang lo baca &amp; catatannya</div>
+    <div class="card">
+      <div class="field-label" style="margin-top:0">Judul Buku</div>
+      <input type="text" placeholder="Nama buku..." id="reading-book-new"/>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <div class="field-label">Halaman Dibaca</div>
+          <input type="number" placeholder="0" id="reading-pages-new"/>
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Total Halaman</div>
+          <input type="number" placeholder="0" id="reading-total-new"/>
+        </div>
+      </div>
+      <div class="field-label">Genre / Kategori</div>
+      <input type="text" placeholder="Non-fiksi, Bisnis, Islam, dll..." id="reading-genre-new"/>
+      <div class="field-label">💡 Insight Utama</div>
+      <textarea rows="3" placeholder="Key insight dari bacaan ini..." id="reading-insight-new"></textarea>
+      <div class="field-label">📝 Refleksi Pribadi</div>
+      <textarea rows="2" placeholder="Relevansinya ke hidup lo?" id="reading-notes-new"></textarea>
+      <div class="field-label">Status</div>
+      <select id="reading-status-new">
+        <option>Sedang Dibaca</option><option>Selesai</option><option>Ditunda</option>
+      </select>
+      <button onclick="addReadingEntry()" style="margin-top:12px;background:linear-gradient(135deg,#c9a84c,#8b6914);border:none;border-radius:8px;color:#0a0a0f;font-weight:bold;font-size:13px;padding:11px 20px;cursor:pointer;width:100%;font-family:'IBM Plex Mono',monospace">+ Tambah Buku</button>
+    </div>
+    <div id="reading-entry-list"></div>
+    <button onclick="exportReadingToPDF()" style="display:flex;align-items:center;gap:10px;background:#111118;border:1px solid #1e4080;border-radius:8px;padding:13px 16px;cursor:pointer;width:100%;color:#e8e4d9;font-size:13px;font-family:'Georgia',serif;transition:border .2s;margin-top:4px" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#1e4080'">
+      <span style="font-size:22px">📄</span>
+      <div style="text-align:left">
+        <div style="font-weight:bold;font-size:13px">Export Semua Reading ke PDF</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#555;margin-top:2px">Semua histori buku dari awal dalam .pdf</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- EXECUTION -->
+  <div class="section" id="sec-execution">
+    <div class="section-title">🚀 Execution Tracker</div>
+    <div class="section-sub">Yang paling penting — lo ngerjain apa?</div>
+    <div class="card">
+      <div class="check-row" onclick="toggleCheck(this,'execution','deepWork')"><div class="check-box"></div><span class="check-label">Deep Work</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'execution','skillLearning')"><div class="check-box"></div><span class="check-label">Skill Learning</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'execution','improveBusiness')"><div class="check-box"></div><span class="check-label">Improve Business</span></div>
+    </div>
+    <div class="field-label">🎯 Output Hari Ini (WAJIB)</div>
+    <textarea rows="4" placeholder="Apa yang konkret lu hasilkan hari ini? Be specific..." oninput="saveField('execution','output',this.value)" id="execution-output"></textarea>
+    <div class="field-label">📝 Evaluasi</div>
+    <textarea rows="3" placeholder="Apa yang lu hindari / kenapa gak maksimal?" oninput="saveField('execution','notes',this.value)" id="execution-notes"></textarea>
+  </div>
+
+  <!-- LEARNING -->
+  <div class="section" id="sec-learning">
+    <div class="section-title">🎯 Learning Log</div>
+    <div class="section-sub">Semua hal yang lo pelajari &amp; catatannya</div>
+    <div class="card">
+      <div class="field-label" style="margin-top:0">Topik / Judul</div>
+      <input type="text" placeholder="Apa yang lo pelajari?" id="learning-topic-new"/>
+      <div class="field-label">Source</div>
+      <input type="text" placeholder="YouTube, buku, podcast, kursus..." id="learning-source-new"/>
+      <div class="field-label">Kategori</div>
+      <select id="learning-cat-new">
+        <option>Skill</option><option>Bisnis</option><option>Agama</option><option>Kesehatan</option><option>Teknologi</option><option>Lainnya</option>
+      </select>
+      <div class="field-label">📖 Catatan / Key Points</div>
+      <textarea rows="4" placeholder="Poin-poin penting yang lo catat..." id="learning-notes-new"></textarea>
+      <div class="field-label">📝 Refleksi + Rencana Apply</div>
+      <textarea rows="2" placeholder="Kapan dan bagaimana lo akan apply ini?" id="learning-reflection-new"></textarea>
+      <button onclick="addLearningEntry()" style="margin-top:12px;background:linear-gradient(135deg,#c9a84c,#8b6914);border:none;border-radius:8px;color:#0a0a0f;font-weight:bold;font-size:13px;padding:11px 20px;cursor:pointer;width:100%;font-family:'IBM Plex Mono',monospace">+ Tambah Catatan</button>
+    </div>
+    <div id="learning-entry-list"></div>
+    <button onclick="exportLearningToPDF()" style="display:flex;align-items:center;gap:10px;background:#111118;border:1px solid #1e4080;border-radius:8px;padding:13px 16px;cursor:pointer;width:100%;color:#e8e4d9;font-size:13px;font-family:'Georgia',serif;transition:border .2s;margin-top:4px" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#1e4080'">
+      <span style="font-size:22px">📄</span>
+      <div style="text-align:left">
+        <div style="font-weight:bold;font-size:13px">Export Semua Learning ke PDF</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#555;margin-top:2px">Semua histori catatan belajar dalam .pdf</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- STUDY -->
+  <div class="section" id="sec-study">
+    <div class="section-title">📖 Study Tracker</div>
+    <div class="section-sub">Semua tugas, PR, dan deadline lo</div>
+
+    <!-- ADD TASK FORM -->
+    <div class="card" id="study-form-card">
+      <div class="field-label" style="margin-top:0">Task Name</div>
+      <input type="text" placeholder="Nama tugas..." id="study-task"/>
+      <div class="field-label">Subject / Mata Kuliah</div>
+      <input type="text" placeholder="Contoh: Matematika, PKN..." id="study-subject"/>
+      <div class="field-label">Deadline</div>
+      <input type="date" id="study-deadline"/>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <div style="flex:1">
+          <div class="field-label" style="margin-top:10px">Status</div>
+          <select id="study-status">
+            <option>Not Started</option><option>In Progress</option><option>Done</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <div class="field-label" style="margin-top:10px">Priority</div>
+          <select id="study-priority">
+            <option>🔴 High</option><option>🟡 Medium</option><option>🟢 Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-label">📌 Notes / Detail</div>
+      <textarea rows="2" placeholder="Detail tugas, kendala, dsb..." id="study-notes"></textarea>
+      <button onclick="addStudyTask()" style="margin-top:12px;background:linear-gradient(135deg,#c9a84c,#8b6914);border:none;border-radius:8px;color:#0a0a0f;font-weight:bold;font-size:13px;padding:11px 20px;cursor:pointer;width:100%;font-family:'IBM Plex Mono',monospace">+ Tambah Tugas</button>
+    </div>
+
+    <!-- TASK LIST -->
+    <div id="study-task-list"></div>
+
+    <!-- EXPORT TO WORD -->
+    <button onclick="exportStudyToPDF()" style="display:flex;align-items:center;gap:10px;background:#111118;border:1px solid #1e4080;border-radius:8px;padding:13px 16px;cursor:pointer;width:100%;color:#e8e4d9;font-size:13px;font-family:'Georgia',serif;transition:border .2s;margin-top:4px" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#1e4080'">
+      <span style="font-size:22px">📄</span>
+      <div style="text-align:left">
+        <div style="font-weight:bold;font-size:13px">Export Semua Tugas ke PDF</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#555;margin-top:2px">Tabel profesional semua histori tugas</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- CONTROL -->
+  <div class="section" id="sec-control">
+    <div class="section-title">🧠 Control System</div>
+    <div class="section-sub">Refleksi jujur akhir hari</div>
+    <div class="card">
+      <div class="check-row" onclick="toggleCheck(this,'control','noScroll')"><div class="check-box"></div><span class="check-label">No Scroll (&lt; 1 jam)</span></div>
+      <div class="check-row" onclick="toggleCheck(this,'control','sleepOnTime')"><div class="check-box"></div><span class="check-label">Sleep On Time</span></div>
+    </div>
+    <div class="field-label">Apa yang salah hari ini?</div>
+    <textarea rows="2" placeholder="Jujur..." oninput="saveField('control','whatWrong',this.value)" id="control-wrong"></textarea>
+    <div class="field-label">Kenapa itu terjadi?</div>
+    <textarea rows="2" placeholder="Root cause..." oninput="saveField('control','whyHappen',this.value)" id="control-why"></textarea>
+    <div class="field-label">Besok mau ubah apa?</div>
+    <textarea rows="2" placeholder="Satu hal konkret..." oninput="saveField('control','changeTomorrow',this.value)" id="control-change"></textarea>
+
+    <div class="field-label">🔥 Final Check</div>
+    <button id="final-check-btn" onclick="toggleFinalCheck()">
+      <div class="check-box" id="final-box"></div>
+      <span id="final-check-label">Apakah hari ini gue beneran maju?</span>
+    </button>
+
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="sec-history">
+    <div class="section-title">📅 History</div>
+    <div class="section-sub">Rekap hari-hari sebelumnya</div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="section" id="sec-export">
+    <div class="section-title">📤 Export Data</div>
+    <div class="section-sub">Download semua data lo</div>
+    <button class="export-btn" onclick="exportCSV()">
+      <span class="export-icon">📊</span>
+      <div class="export-info">
+        <div class="export-title">Export ke CSV</div>
+        <div class="export-sub">Bisa dibuka di Excel / Google Sheets</div>
+      </div>
+    </button>
+    <button class="export-btn" onclick="exportJSON()">
+      <span class="export-icon">🗂️</span>
+      <div class="export-info">
+        <div class="export-title">Export ke JSON</div>
+        <div class="export-sub">Backup lengkap semua data</div>
+      </div>
+    </button>
+    <button class="export-btn" onclick="exportMarkdown()">
+      <span class="export-icon">📝</span>
+      <div class="export-info">
+        <div class="export-title">Export ke Markdown</div>
+        <div class="export-sub">Bisa dibuka di Notion / Obsidian</div>
+      </div>
+    </button>
+    <div style="margin-top:20px;padding:14px;background:#0f0f18;border:1px solid #1a1a28;border-radius:10px">
+      <div class="field-label" style="margin-top:0">⚠️ Hapus Semua Data</div>
+      <p style="font-size:12px;color:#555;margin-bottom:12px;line-height:1.6">Ini akan menghapus seluruh history. Tidak bisa di-undo.</p>
+      <button onclick="clearAllData()" style="background:#1a0a0a;border:1px solid #ef444433;border-radius:6px;color:#ef4444;padding:9px 16px;cursor:pointer;font-size:12px;font-family:'IBM Plex Mono',monospace;width:100%">Hapus Semua Data</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TODAY_KEY = 'life_' + new Date().toDateString();
+const ALL_DAYS_KEY = 'life_all_days';
+
+const defaultDay = () => ({
+  ibadah: { checklist:{}, notes:'' },
+  reading: { entries:[] },
+  execution: { checklist:{}, output:'', notes:'' },
+  learning: { entries:[] },
+  study: { tasks: [] },
+  control: { checklist:{}, whatWrong:'', whyHappen:'', changeTomorrow:'' },
+  finalCheck: false,
+  date: new Date().toDateString()
+});
+
+let state;
+try {
+  const saved = localStorage.getItem(TODAY_KEY);
+  state = saved ? {...defaultDay(), ...JSON.parse(saved)} : defaultDay();
+} catch(e) { state = defaultDay(); }
+
+function getAllDays() {
+  try { return JSON.parse(localStorage.getItem(ALL_DAYS_KEY)||'{}'); } catch(e) { return {}; }
+}
+
+function save() {
+  try {
+    localStorage.setItem(TODAY_KEY, JSON.stringify(state));
+    const all = getAllDays();
+    all[new Date().toDateString()] = state;
+    localStorage.setItem(ALL_DAYS_KEY, JSON.stringify(all));
+  } catch(e) {}
+  updateProgress();
+  updateStreak();
+}
+
+// Date
+const d = new Date();
+document.getElementById('site-date').textContent = d.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// Navigation
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'history') renderHistory();
+}
+
+// Checkbox toggle
+function toggleCheck(row, section, key) {
+  if (!state[section].checklist) state[section].checklist = {};
+  const val = !state[section].checklist[key];
+  state[section].checklist[key] = val;
+  const box = row.querySelector('.check-box');
+  const label = row.querySelector('.check-label');
+  box.classList.toggle('done', val);
+  box.textContent = val ? '✓' : '';
+  if (label) label.classList.toggle('done', val);
+  save();
+}
+
+function toggleReadToday(row) {
+  state.reading.read = !state.reading.read;
+  const box = row.querySelector('.check-box');
+  const label = row.querySelector('.check-label');
+  box.classList.toggle('done', state.reading.read);
+  box.textContent = state.reading.read ? '✓' : '';
+  if (label) label.classList.toggle('done', state.reading.read);
+  document.getElementById('reading-extra').style.display = state.reading.read ? 'block' : 'none';
+  save();
+}
+
+function saveField(section, field, value) {
+  state[section][field] = value;
+  save();
+}
+
+function toggleFinalCheck() {
+  state.finalCheck = !state.finalCheck;
+  const btn = document.getElementById('final-check-btn');
+  const box = document.getElementById('final-box');
+  const label = document.getElementById('final-check-label');
+  btn.classList.toggle('done', state.finalCheck);
+  box.classList.toggle('done', state.finalCheck);
+  box.textContent = state.finalCheck ? '✓' : '';
+  label.style.color = state.finalCheck ? '#22c55e' : '#e8e4d9';
+  label.textContent = state.finalCheck ? '✅ Iya, gue beneran maju hari ini!' : 'Apakah hari ini gue beneran maju?';
+  save();
+}
+
+// Progress
+function calcProgress(s) {
+  let total = 0, done = 0;
+  ['subuh','dhuha','dzuhur','ashar','maghrib','isya','tahajud'].forEach(k=>{total++;if(s.ibadah?.checklist?.[k])done++;});
+  total++; if(s.reading?.entries?.length>0)done++;
+  ['deepWork','skillLearning','improveBusiness'].forEach(k=>{total++;if(s.execution?.checklist?.[k])done++;});
+  total++; if(s.execution?.output?.trim())done++;
+  total++; if(s.learning?.entries?.length>0)done++;
+  total++; if(s.study?.tasks?.some(t=>t.done))done++;
+  ['noScroll','sleepOnTime'].forEach(k=>{total++;if(s.control?.checklist?.[k])done++;});
+  total++; if(s.finalCheck)done++;
+  return Math.round((done/total)*100);
+}
+
+function updateProgress() {
+  const pct = calcProgress(state);
+  const color = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444';
+  document.getElementById('progress-pct').textContent = pct+'%';
+  document.getElementById('progress-pct').style.color = color;
+  document.getElementById('progress-bar-fill').style.width = pct+'%';
+  document.getElementById('progress-bar-fill').style.background = color;
+}
+
+// Streak
+function updateStreak() {
+  const all = getAllDays();
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toDateString();
+    const dayData = i === 0 ? state : all[key];
+    if (!dayData) break;
+    const pct = calcProgress(dayData);
+    if (pct >= 50) streak++;
+    else if (i > 0) break;
+  }
+  document.getElementById('streak-num').textContent = streak;
+}
+
+// History
+function renderHistory() {
+  const all = getAllDays();
+  const container = document.getElementById('history-list');
+  const keys = Object.keys(all).sort((a,b)=>new Date(b)-new Date(a));
+  const todayStr = new Date().toDateString();
+
+  if (keys.length === 0) {
+    container.innerHTML = '<div class="empty-state">Belum ada history.<br>Data akan tersimpan setelah lo pakai tracker.</div>';
+    return;
+  }
+
+  container.innerHTML = keys.map((k,idx) => {
+    const day = all[k];
+    const pct = calcProgress(day);
+    const color = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444';
+    const isToday = k === todayStr;
+    const dateStr = new Date(k).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+    const ibadahDone = Object.values(day.ibadah?.checklist||{}).filter(Boolean).length;
+    const execDone = Object.values(day.execution?.checklist||{}).filter(Boolean).length;
+
+    return `
+    <div class="history-day">
+      <div class="history-day-header" onclick="toggleHistoryDay('hbody-${idx}')">
+        <div>
+          <div class="history-date">${dateStr}${isToday?' · Hari ini':''}</div>
+          <div style="font-size:11px;color:#444;margin-top:2px;font-family:'IBM Plex Mono',monospace">
+            🕌 ${ibadahDone}/7 · 🚀 ${execDone}/3 · ${day.finalCheck?'✅ Maju':'❌ Belum maju'}
+          </div>
+        </div>
+        <div class="history-pct" style="color:${color}">${pct}%</div>
+      </div>
+      <div class="history-body" id="hbody-${idx}">
+        ${day.execution?.output?`<div class="history-row"><span class="history-key">Output</span><span class="history-val">${day.execution.output}</span></div>`:''}
+        ${day.reading?.entries?.length>0?`<div class="history-row"><span class="history-key">Buku</span><span class="history-val">${day.reading.entries.length} buku dicatat</span></div>`:''}
+        ${day.learning?.entries?.length>0?`<div class="history-row"><span class="history-key">Learning</span><span class="history-val">${day.learning.entries.length} topik dicatat</span></div>`:''}
+        ${day.control?.whatWrong?`<div class="history-row"><span class="history-key">Yang salah</span><span class="history-val">${day.control.whatWrong}</span></div>`:''}
+        ${day.control?.changeTomorrow?`<div class="history-row"><span class="history-key">Mau ubah</span><span class="history-val">${day.control.changeTomorrow}</span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistoryDay(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+// Export CSV
+function exportCSV() {
+  const all = getAllDays();
+  const keys = Object.keys(all).sort((a,b)=>new Date(a)-new Date(b));
+  if (!keys.length) { alert('Belum ada data untuk diexport.'); return; }
+
+  const headers = ['Tanggal','Progress%','Subuh','Dhuha','Dzuhur','Ashar','Maghrib','Isya','Tahajud','Read','Buku','Halaman','Deep Work','Skill Learning','Improve Business','Output','Learning Topic','No Scroll','Sleep On Time','Yang Salah','Kenapa','Mau Ubah','Final Check'];
+  const rows = keys.map(k => {
+    const d = all[k]; const cl = d.ibadah?.checklist||{}; const ec = d.execution?.checklist||{}; const cc = d.control?.checklist||{};
+    return [
+      k, calcProgress(d),
+      cl.subuh?'✓':'', cl.dhuha?'✓':'', cl.dzuhur?'✓':'', cl.ashar?'✓':'', cl.maghrib?'✓':'', cl.isya?'✓':'', cl.tahajud?'✓':'',
+      d.reading?.read?'✓':'', d.reading?.bookName||'', d.reading?.pages||'',
+      ec.deepWork?'✓':'', ec.skillLearning?'✓':'', ec.improveBusiness?'✓':'',
+      (d.execution?.output||'').replace(/\n/g,' '),
+      d.learning?.topic||'',
+      cc.noScroll?'✓':'', cc.sleepOnTime?'✓':'',
+      (d.control?.whatWrong||'').replace(/\n/g,' '),
+      (d.control?.whyHappen||'').replace(/\n/g,' '),
+      (d.control?.changeTomorrow||'').replace(/\n/g,' '),
+      d.finalCheck?'Ya':'Tidak'
+    ].map(v => '"'+String(v).replace(/"/g,'""')+'"');
+  });
+
+  const csv = [headers.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  download('life-system-export.csv', csv, 'text/csv');
+}
+
+// Export JSON
+function exportJSON() {
+  const all = getAllDays();
+  if (!Object.keys(all).length) { alert('Belum ada data untuk diexport.'); return; }
+  download('life-system-backup.json', JSON.stringify(all, null, 2), 'application/json');
+}
+
+// Export Markdown
+// Helper: convert multiline textarea text to readable markdown block
+function mdBlock(text) {
+  if (!text) return '';
+  // Each line becomes its own paragraph line, blank lines preserved
+  return text.split('\n').map(line => line.trimEnd()).join('  \n') + '\n';
+}
+
+function exportMarkdown() {
+  const all = getAllDays();
+  const keys = Object.keys(all).sort((a,b)=>new Date(b)-new Date(a));
+  if (!keys.length) { alert('Belum ada data untuk diexport.'); return; }
+
+  let md = '# Life System Export\n\n';
+  keys.forEach(k => {
+    const d = all[k];
+    const pct = calcProgress(d);
+    const cl = d.ibadah?.checklist||{};
+    md += `## ${k} — ${pct}%\n\n`;
+
+    // IBADAH
+    md += `### 🕌 Ibadah\n\n`;
+    ['subuh','dhuha','dzuhur','ashar','maghrib','isya','tahajud'].forEach(s => {
+      md += `- [${cl[s]?'x':' '}] ${s.charAt(0).toUpperCase()+s.slice(1)}\n`;
+    });
+    if (d.ibadah?.notes) {
+      md += `\n**Catatan Ibadah:**\n\n${mdBlock(d.ibadah.notes)}\n`;
+    }
+
+    // EXECUTION
+    md += `\n### 🚀 Execution\n\n`;
+    const ec = d.execution?.checklist||{};
+    md += `- [${ec.deepWork?'x':' '}] Deep Work\n`;
+    md += `- [${ec.skillLearning?'x':' '}] Skill Learning\n`;
+    md += `- [${ec.improveBusiness?'x':' '}] Improve Business\n`;
+    if (d.execution?.output) {
+      md += `\n**Output Hari Ini:**\n\n${mdBlock(d.execution.output)}\n`;
+    }
+    if (d.execution?.notes) {
+      md += `\n**Evaluasi:**\n\n${mdBlock(d.execution.notes)}\n`;
+    }
+
+    // READING
+    if (d.reading?.entries?.length) {
+      md += `\n### 📚 Reading\n\n`;
+      d.reading.entries.forEach((e, i) => {
+        md += `**${i+1}. ${e.bookName}**\n`;
+        md += `Halaman: ${e.pages||0}${e.total?'/'+e.total:''} | Genre: ${e.genre||'-'} | Status: ${e.status||'-'}\n\n`;
+        if (e.insight) md += `*Insight Utama:*\n\n${mdBlock(e.insight)}\n`;
+        if (e.notes) md += `*Refleksi Pribadi:*\n\n${mdBlock(e.notes)}\n`;
+        md += '\n';
+      });
+    }
+
+    // LEARNING
+    if (d.learning?.entries?.length) {
+      md += `\n### 🎯 Learning\n\n`;
+      d.learning.entries.forEach((e, i) => {
+        md += `**${i+1}. ${e.topic}**\n`;
+        if (e.source) md += `Source: ${e.source}\n\n`;
+        if (e.notes) md += `*Catatan / Key Points:*\n\n${mdBlock(e.notes)}\n`;
+        if (e.reflection) md += `*Rencana Apply:*\n\n${mdBlock(e.reflection)}\n`;
+        md += '\n';
+      });
+    }
+
+    // STUDY TASKS
+    if (d.study?.tasks?.length) {
+      md += `\n### 📖 Study / Tugas\n\n`;
+      d.study.tasks.forEach((t, i) => {
+        const dl = t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-';
+        md += `**${i+1}. ${t.name}** [${t.done?'✓ Selesai':t.status}]\n`;
+        md += `Subject: ${t.subject||'-'} | Deadline: ${dl} | Priority: ${(t.priority||'').replace(/🔴 |🟡 |🟢 /g,'')}\n\n`;
+        if (t.notes) md += `*Notes:*\n\n${mdBlock(t.notes)}\n`;
+        md += '\n';
+      });
+    }
+
+    // CONTROL
+    md += `\n### 🧠 Refleksi Akhir Hari\n\n`;
+    const cc = d.control?.checklist||{};
+    md += `- [${cc.noScroll?'x':' '}] No Scroll < 1 jam\n`;
+    md += `- [${cc.sleepOnTime?'x':' '}] Sleep On Time\n`;
+    if (d.control?.whatWrong) {
+      md += `\n**Yang salah hari ini:**\n\n${mdBlock(d.control.whatWrong)}\n`;
+    }
+    if (d.control?.whyHappen) {
+      md += `\n**Kenapa terjadi:**\n\n${mdBlock(d.control.whyHappen)}\n`;
+    }
+    if (d.control?.changeTomorrow) {
+      md += `\n**Besok mau ubah:**\n\n${mdBlock(d.control.changeTomorrow)}\n`;
+    }
+
+    md += `\n**Final Check:** ${d.finalCheck?'✅ Iya, gue beneran maju hari ini':'❌ Belum maju'}\n\n`;
+    md += `---\n\n`;
+  });
+
+  download('life-system-notes.md', md, 'text/markdown');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearAllData() {
+  if (!confirm('Yakin mau hapus semua data? Ini tidak bisa di-undo.')) return;
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('life_'));
+  keys.forEach(k => localStorage.removeItem(k));
+  alert('Semua data berhasil dihapus. Halaman akan direload.');
+  location.reload();
+}
+
+// AI Reflection
+
+// Restore UI
+// ── READING MULTI-ENTRY ───────────────────────────────────────────
+function addReadingEntry() {
+  const bookName = document.getElementById('reading-book-new').value.trim();
+  if (!bookName) { alert('Isi judul buku dulu!'); return; }
+  if (!state.reading.entries) state.reading.entries = [];
+  state.reading.entries.push({
+    id: Date.now(),
+    bookName,
+    pages: document.getElementById('reading-pages-new').value || '0',
+    total: document.getElementById('reading-total-new').value || '',
+    genre: document.getElementById('reading-genre-new').value.trim(),
+    insight: document.getElementById('reading-insight-new').value.trim(),
+    notes: document.getElementById('reading-notes-new').value.trim(),
+    status: document.getElementById('reading-status-new').value,
+    date: new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
+  });
+  save();
+  renderReadingEntries();
+  ['reading-book-new','reading-pages-new','reading-total-new','reading-genre-new','reading-insight-new','reading-notes-new'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('reading-status-new').value='Sedang Dibaca';
+}
+
+function deleteReadingEntry(id) {
+  if (!confirm('Hapus entri ini?')) return;
+  state.reading.entries = (state.reading.entries||[]).filter(e=>e.id!==id);
+  save(); renderReadingEntries();
+}
+
+function renderReadingEntries() {
+  if (!state.reading.entries) state.reading.entries = [];
+  const list = document.getElementById('reading-entry-list');
+  if (!list) return;
+  if (state.reading.entries.length === 0) {
+    list.innerHTML = '<div class="study-empty">Belum ada buku dicatat.<br>Tambah buku di atas 👆</div>';
+    return;
+  }
+  const statusColor = {'Selesai':'#22c55e','Sedang Dibaca':'#60a5fa','Ditunda':'#f59e0b'};
+  list.innerHTML = state.reading.entries.map(e => {
+    const pct = e.total && e.pages ? Math.min(100,Math.round((+e.pages/+e.total)*100)) : null;
+    const sc = statusColor[e.status]||'#888';
+    return `<div class="study-task-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="study-task-name">📖 ${e.bookName}</div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid ${sc}33;color:${sc};background:${sc}11;white-space:nowrap">${e.status}</span>
+      </div>
+      ${e.genre?`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#c9a84c;margin-top:3px">${e.genre}</div>`:''}
+      <div class="study-task-meta">
+        <span class="tag tag-deadline">📄 ${e.pages}${e.total?'/'+e.total:''} hal${pct!==null?' ('+pct+'%)':''}</span>
+        <span class="tag" style="color:#888;border-color:#33333355">🗓 ${e.date}</span>
+      </div>
+      ${e.insight?`<div class="study-task-notes"><b style="color:#c9a84c88;font-size:10px">INSIGHT</b><br>${e.insight}</div>`:''}
+      ${e.notes?`<div class="study-task-notes" style="margin-top:4px"><b style="color:#88888888;font-size:10px">REFLEKSI</b><br>${e.notes}</div>`:''}
+      <div class="study-task-actions">
+        <button class="task-btn del-btn" onclick="deleteReadingEntry(${e.id})">🗑 Hapus</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LEARNING MULTI-ENTRY ─────────────────────────────────────────
+function addLearningEntry() {
+  const topic = document.getElementById('learning-topic-new').value.trim();
+  if (!topic) { alert('Isi topik dulu!'); return; }
+  if (!state.learning.entries) state.learning.entries = [];
+  state.learning.entries.push({
+    id: Date.now(),
+    topic,
+    source: document.getElementById('learning-source-new').value.trim(),
+    category: document.getElementById('learning-cat-new').value,
+    notes: document.getElementById('learning-notes-new').value.trim(),
+    reflection: document.getElementById('learning-reflection-new').value.trim(),
+    date: new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
+  });
+  save();
+  renderLearningEntries();
+  ['learning-topic-new','learning-source-new','learning-notes-new','learning-reflection-new'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('learning-cat-new').value='Skill';
+}
+
+function deleteLearningEntry(id) {
+  if (!confirm('Hapus entri ini?')) return;
+  state.learning.entries = (state.learning.entries||[]).filter(e=>e.id!==id);
+  save(); renderLearningEntries();
+}
+
+function renderLearningEntries() {
+  if (!state.learning.entries) state.learning.entries = [];
+  const list = document.getElementById('learning-entry-list');
+  if (!list) return;
+  if (state.learning.entries.length === 0) {
+    list.innerHTML = '<div class="study-empty">Belum ada catatan belajar.<br>Tambah di atas 👆</div>';
+    return;
+  }
+  const catColors = {'Skill':'#a78bfa','Bisnis':'#f59e0b','Agama':'#22c55e','Kesehatan':'#ec4899','Teknologi':'#60a5fa','Lainnya':'#888'};
+  list.innerHTML = state.learning.entries.map(e => {
+    const cc = catColors[e.category]||'#888';
+    return `<div class="study-task-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="study-task-name">🎯 ${e.topic}</div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid ${cc}33;color:${cc};background:${cc}11;white-space:nowrap">${e.category}</span>
+      </div>
+      ${e.source?`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#c9a84c;margin-top:3px">📺 ${e.source}</div>`:''}
+      <div class="study-task-meta">
+        <span class="tag" style="color:#888;border-color:#33333355">🗓 ${e.date}</span>
+      </div>
+      ${e.notes?`<div class="study-task-notes"><b style="color:#a78bfa88;font-size:10px">CATATAN</b><br>${e.notes}</div>`:''}
+      ${e.reflection?`<div class="study-task-notes" style="margin-top:4px"><b style="color:#88888888;font-size:10px">RENCANA APPLY</b><br>${e.reflection}</div>`:''}
+      <div class="study-task-actions">
+        <button class="task-btn del-btn" onclick="deleteLearningEntry(${e.id})">🗑 Hapus</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function restoreUI() {
+  const ibadahKeys=['subuh','dhuha','dzuhur','ashar','maghrib','isya','tahajud'];
+  document.querySelectorAll('#sec-ibadah .check-row').forEach((row,i)=>{
+    const k=ibadahKeys[i]; if(state.ibadah?.checklist?.[k]){row.querySelector('.check-box').classList.add('done');row.querySelector('.check-box').textContent='✓';row.querySelector('.check-label').classList.add('done');}
+  });
+  const n1=document.getElementById('ibadah-notes');if(n1)n1.value=state.ibadah?.notes||'';
+
+  renderReadingEntries();
+
+  const execKeys=['deepWork','skillLearning','improveBusiness'];
+  document.querySelectorAll('#sec-execution .check-row').forEach((row,i)=>{
+    const k=execKeys[i];if(state.execution?.checklist?.[k]){row.querySelector('.check-box').classList.add('done');row.querySelector('.check-box').textContent='✓';row.querySelector('.check-label').classList.add('done');}
+  });
+  const eo=document.getElementById('execution-output');if(eo)eo.value=state.execution?.output||'';
+  const en=document.getElementById('execution-notes');if(en)en.value=state.execution?.notes||'';
+
+  renderLearningEntries();
+
+  renderStudyTasks();
+
+  const controlKeys=['noScroll','sleepOnTime'];
+  document.querySelectorAll('#sec-control .check-row').forEach((row,i)=>{
+    const k=controlKeys[i];if(state.control?.checklist?.[k]){row.querySelector('.check-box').classList.add('done');row.querySelector('.check-box').textContent='✓';row.querySelector('.check-label').classList.add('done');}
+  });
+  const cw=document.getElementById('control-wrong');if(cw)cw.value=state.control?.whatWrong||'';
+  const cy=document.getElementById('control-why');if(cy)cy.value=state.control?.whyHappen||'';
+  const cc2=document.getElementById('control-change');if(cc2)cc2.value=state.control?.changeTomorrow||'';
+
+  if(state.finalCheck){
+    document.getElementById('final-check-btn').classList.add('done');
+    document.getElementById('final-box').classList.add('done');
+    document.getElementById('final-box').textContent='✓';
+    document.getElementById('final-check-label').style.color='#22c55e';
+    document.getElementById('final-check-label').textContent='✅ Iya, gue beneran maju hari ini!';
+  }
+  updateProgress(); updateStreak();
+}
+
+
+// ── STUDY MULTI-TASK ──────────────────────────────────────────────
+function addStudyTask() {
+  const name = document.getElementById('study-task').value.trim();
+  const subject = document.getElementById('study-subject').value.trim();
+  const deadline = document.getElementById('study-deadline').value;
+  const status = document.getElementById('study-status').value;
+  const priority = document.getElementById('study-priority').value;
+  const notes = document.getElementById('study-notes').value.trim();
+
+  if (!name) { alert('Isi nama tugas dulu!'); return; }
+
+  if (!state.study.tasks) state.study.tasks = [];
+  state.study.tasks.push({ id: Date.now(), name, subject, deadline, status, priority, notes, done: false });
+  save();
+  renderStudyTasks();
+
+  // Clear form
+  document.getElementById('study-task').value = '';
+  document.getElementById('study-subject').value = '';
+  document.getElementById('study-deadline').value = '';
+  document.getElementById('study-notes').value = '';
+  document.getElementById('study-status').value = 'Not Started';
+  document.getElementById('study-priority').value = '🔴 High';
+}
+
+function toggleStudyDone(id) {
+  const task = state.study.tasks.find(t => t.id === id);
+  if (task) { task.done = !task.done; task.status = task.done ? 'Done' : 'In Progress'; }
+  save(); renderStudyTasks();
+}
+
+function deleteStudyTask(id) {
+  if (!confirm('Hapus tugas ini?')) return;
+  state.study.tasks = state.study.tasks.filter(t => t.id !== id);
+  save(); renderStudyTasks();
+}
+
+function renderStudyTasks() {
+  if (!state.study.tasks) state.study.tasks = [];
+  const list = document.getElementById('study-task-list');
+  if (!list) return;
+  if (state.study.tasks.length === 0) {
+    list.innerHTML = '<div class="study-empty">Belum ada tugas.<br>Tambah tugas di atas 👆</div>';
+    return;
+  }
+
+  // Sort: undone first, then by deadline
+  const sorted = [...state.study.tasks].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
+    return 0;
+  });
+
+  list.innerHTML = sorted.map(task => {
+    const prioKey = task.priority.includes('High') ? 'high' : task.priority.includes('Medium') ? 'medium' : 'low';
+    const dlLabel = task.deadline ? new Date(task.deadline).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '';
+    const isDue = task.deadline && !task.done && new Date(task.deadline) < new Date();
+    return `
+    <div class="study-task-card ${task.done ? 'done-card' : ''}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div class="study-task-name ${task.done ? 'done-name' : ''}">${task.name}</div>
+      </div>
+      ${task.subject ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#c9a84c;margin-top:3px">${task.subject}</div>` : ''}
+      <div class="study-task-meta">
+        <span class="tag tag-${prioKey}">${task.priority}</span>
+        <span class="tag tag-status">${task.status}</span>
+        ${dlLabel ? `<span class="tag tag-deadline" style="${isDue?'color:#ef4444;border-color:#ef444433;background:#ef44440d':''}">${isDue?'⚠️ ':'📅 '}${dlLabel}</span>` : ''}
+      </div>
+      ${task.notes ? `<div class="study-task-notes">${task.notes}</div>` : ''}
+      <div class="study-task-actions">
+        <button class="task-btn ${task.done ? 'done-btn' : ''}" onclick="toggleStudyDone(${task.id})">${task.done ? '✓ Done' : 'Mark Done'}</button>
+        <button class="task-btn del-btn" onclick="deleteStudyTask(${task.id})">🗑 Hapus</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EXPORT STUDY TO WORD (pure JS, no external library) ──────────
+// Minimal ZIP builder
+function pdfEsc(s) {
+  return String(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/\(/g,'\\(')
+    .replace(/\)/g,'\\)')
+    .replace(/[\x00-\x1f]/g,' ');
+}
+
+// Pure JS PDF builder - no external libs needed
+function buildPDF(pages) {
+  // pages: array of {title, subtitle, date, summary, headers, rows, filename}
+  // Each row: array of {text, color} per column
+  const enc = s => new TextEncoder().encode(s);
+  
+  let pdf = '';
+  const objs = [];
+  
+  function addObj(content) {
+    objs.push({offset: 0, content});
+    return objs.length; // 1-based
+  }
+  
+  // We'll build everything as one page per call
+  // Page size: A4 landscape = 842 x 595 pt
+  const PW = 842, PH = 595;
+  const ML = 30, MR = 30, MT = 30, MB = 30;
+  const TW = PW - ML - MR;
+  
+  // Colors: hex -> r g b (0-1)
+  function hexRGB(h) {
+    h = h.replace('#','');
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    const n=parseInt(h,16);
+    return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255];
+  }
+  
+  function colorCmd(hex, stroke=false) {
+    const [r,g,b] = hexRGB(hex);
+    return stroke ? `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)} RG` 
+                  : `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)} rg`;
+  }
+
+  // Embed Helvetica (standard font, always available in PDF viewers)
+  // obj 1: catalog, 2: pages, 3: font, then page+content per data set
+  
+  let allStreams = [];
+  
+  function makePageStream(p) {
+    const {title, subtitle, date, summary, headers, rows, colRatios} = p;
+    const colWidths = colRatios.map(r => Math.floor(r * TW));
+    // Fix rounding
+    const sum = colWidths.reduce((a,b)=>a+b,0);
+    colWidths[colWidths.length-1] += TW - sum;
+    
+    let y = PH - MT;
+    let out = '';
+    
+    // Title
+    out += `BT /F1 16 Tf ${colorCmd('1F3A5F')} ${ML} ${y-16} Td (${pdfEsc(title)}) Tj ET\n`;
+    y -= 22;
+    // Subtitle
+    out += `BT /F1 9 Tf ${colorCmd('2C3E6B')} ${ML} ${y-9} Td (${pdfEsc(subtitle)}) Tj ET\n`;
+    y -= 14;
+    // Date
+    out += `BT /F1 8 Tf ${colorCmd('888888')} ${ML} ${y-8} Td (${pdfEsc(date)}) Tj ET\n`;
+    y -= 12;
+    // Summary
+    out += `BT /F1 8 Tf ${colorCmd('444444')} ${ML} ${y-8} Td (${pdfEsc(summary)}) Tj ET\n`;
+    y -= 14;
+    // Divider line
+    out += `${colorCmd('1F3A5F', true)} 0.5 w ${ML} ${y} m ${PW-MR} ${y} l S\n`;
+    y -= 8;
+    
+    const ROW_H = 16;
+    const HEADER_H = 18;
+    
+    // Draw header
+    out += `${colorCmd('1F3A5F')} `;
+    let x = ML;
+    out += `${x} ${y-HEADER_H} ${TW} ${HEADER_H} re f\n`;
+    x = ML;
+    headers.forEach((h, ci) => {
+      const cw = colWidths[ci];
+      out += `BT /F2 7.5 Tf ${colorCmd('FFFFFF')} ${x+3} ${y-HEADER_H+5} Td (${pdfEsc(h)}) Tj ET\n`;
+      x += cw;
+    });
+    y -= HEADER_H;
+    
+    // Draw rows
+    rows.forEach((row, ri) => {
+      if (y - ROW_H < MB + 10) return; // skip if no space (simple, no multi-page for now)
+      
+      const bg = ri%2===0 ? 'F0F4FA' : 'FFFFFF';
+      out += `${colorCmd(bg)} ${ML} ${y-ROW_H} ${TW} ${ROW_H} re f\n`;
+      
+      // Row border
+      out += `${colorCmd('C5D0E0', true)} 0.3 w ${ML} ${y-ROW_H} m ${PW-MR} ${y-ROW_H} l S\n`;
+      
+      x = ML;
+      row.forEach((cell, ci) => {
+        const cw = colWidths[ci];
+        const color = cell.color || '1A1A1A';
+        const bold = cell.bold ? '/F2' : '/F1';
+        // Truncate text to fit column
+        const maxChars = Math.floor(cw / 5.2);
+        let txt = String(cell.text||'');
+        if(txt.length > maxChars) txt = txt.substring(0, maxChars-1) + '…';
+        out += `BT ${bold} 7 Tf ${colorCmd(color)} ${x+3} ${y-ROW_H+5} Td (${pdfEsc(txt)}) Tj ET\n`;
+        // Col divider
+        if(ci < row.length-1) {
+          out += `${colorCmd('D0D8E8', true)} 0.3 w ${x+cw} ${y} m ${x+cw} ${y-ROW_H} l S\n`;
+        }
+        x += cw;
+      });
+      
+      // Separator row (darker bg, white text spanning all cols)
+      y -= ROW_H;
+    });
+    
+    // Outer border
+    out += `${colorCmd('1F3A5F', true)} 1 w ${ML} ${y} ${TW} ${PH-MT-y} re S\n`;
+    
+    // Footer
+    out += `BT /F1 7 Tf ${colorCmd('AAAAAA')} ${ML} ${MB} Td (Generated by Life System Dashboard — data dari awal sampai sekarang) Tj ET\n`;
+    
+    return out;
+  }
+  
+  return {makePageStream, colorCmd, pdfEsc, hexRGB};
+}
+
+// Main PDF export function
+function exportToPDF({title, subtitle, date, summary, headers, colRatios, rows, filename}) {
+  // A4 landscape
+  const PW = 842, PH = 595;
+  const ML = 30, MR = 30, MT = 30, MB = 20;
+  const TW = PW - ML - MR;
+  
+  const colWidths = colRatios.map(r => Math.floor(r * TW));
+  const wsum = colWidths.reduce((a,b)=>a+b,0);
+  colWidths[colWidths.length-1] += TW - wsum;
+
+  function hexRGB(h) {
+    h = (h||'000000').replace('#','');
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    const n=parseInt(h,16)||0;
+    return [(n>>16&255)/255,(n>>8&255)/255,(n&255)/255];
+  }
+  function rgb(hex, stroke=false) {
+    const [r,g,b]=hexRGB(hex);
+    const op=stroke?'RG':'rg';
+    return `${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)} ${op}`;
+  }
+
+  const FONT_SIZE = 6.8;
+  const CHAR_W = 3.9;
+  const LINE_H = 9;
+  const ROW_PAD = 5;
+  const HEADER_H = 17;
+  const TITLE_BLOCK = 68;
+  const MB_SAFE = MB + 20;
+
+  function wrapText(text, pixelWidth) {
+    const maxChars = Math.max(1, Math.floor(pixelWidth / CHAR_W));
+    const paragraphs = String(text||'').replace(/\r/g,'').split('\n');
+    const lines = [];
+    paragraphs.forEach(para => {
+      if (!para.trim()) { lines.push(''); return; }
+      const wds = para.split(' ');
+      let cur = '';
+      wds.forEach(w => {
+        if (!w) return;
+        if (!cur) {
+          while (w.length > maxChars) { lines.push(w.slice(0,maxChars)); w = w.slice(maxChars); }
+          cur = w;
+        } else if (cur.length + 1 + w.length <= maxChars) {
+          cur += ' ' + w;
+        } else {
+          lines.push(cur);
+          while (w.length > maxChars) { lines.push(w.slice(0,maxChars)); w = w.slice(maxChars); }
+          cur = w;
+        }
+      });
+      if (cur) lines.push(cur);
+    });
+    return lines.length ? lines : [''];
+  }
+
+  function rowHeight(row) {
+    if (row[0]?.__sep) return LINE_H + ROW_PAD;
+    let maxLines = 1;
+    row.forEach((cell, ci) => {
+      const lines = wrapText(cell.text, colWidths[ci] - 6);
+      if (lines.length > maxLines) maxLines = lines.length;
+    });
+    return maxLines * LINE_H + ROW_PAD;
+  }
+
+  const USABLE_H = PH - MT - MB_SAFE - TITLE_BLOCK;
+  const pages = [];
+  let curPage = [], curH = 0;
+  rows.forEach(row => {
+    const rh = rowHeight(row);
+    if (curPage.length > 0 && curH + rh > USABLE_H) {
+      pages.push(curPage); curPage = []; curH = 0;
+    }
+    curPage.push(row); curH += rh;
+  });
+  if (curPage.length || pages.length === 0) pages.push(curPage);
+
+  function makeStream(pageRows, pageNum) {
+    let y = PH - MT;
+    let s = '';
+
+    s += `BT /F2 15 Tf ${rgb('1F3A5F')} ${ML} ${(y-=16)} Td (${pdfEsc(title)}) Tj ET\n`;
+    s += `BT /F1 8.5 Tf ${rgb('2C3E6B')} ${ML} ${(y-=13)} Td (${pdfEsc(subtitle)}) Tj ET\n`;
+    s += `BT /F1 7.5 Tf ${rgb('777777')} ${ML} ${(y-=11)} Td (${pdfEsc(date)}) Tj ET\n`;
+    s += `BT /F1 7.5 Tf ${rgb('444444')} ${ML} ${(y-=11)} Td (${pdfEsc(summary)}) Tj ET\n`;
+    s += `${rgb('1F3A5F',true)} 0.8 w ${ML} ${(y-=7)} m ${PW-MR} ${y} l S\n`;
+    y -= 4;
+
+    s += `${rgb('1F3A5F')} ${ML} ${y-HEADER_H} ${TW} ${HEADER_H} re f\n`;
+    let x = ML;
+    headers.forEach((h,ci) => {
+      const cw = colWidths[ci];
+      const maxC = Math.floor(cw/5.5);
+      let ht = String(h||''); if(ht.length>maxC) ht=ht.slice(0,maxC-1)+'…';
+      s += `BT /F2 7 Tf ${rgb('FFFFFF')} ${x+3} ${y-HEADER_H+5} Td (${pdfEsc(ht)}) Tj ET\n`;
+      if(ci<headers.length-1) s += `${rgb('4A6FA5',true)} 0.4 w ${x+cw} ${y} m ${x+cw} ${y-HEADER_H} l S\n`;
+      x += cw;
+    });
+    y -= HEADER_H;
+
+    pageRows.forEach((row, ri) => {
+      const isSep = row[0]?.__sep;
+      const rh = rowHeight(row);
+      if (isSep) {
+        s += `${rgb('2C4A7C')} ${ML} ${y-rh} ${TW} ${rh} re f\n`;
+        s += `BT /F2 7 Tf ${rgb('FFFFFF')} ${ML+4} ${y-rh+5} Td (${pdfEsc(row[0].text)}) Tj ET\n`;
+      } else {
+        const bg = ri%2===0?'EEF2FA':'FFFFFF';
+        s += `${rgb(bg)} ${ML} ${y-rh} ${TW} ${rh} re f\n`;
+        s += `${rgb('D0D8E8',true)} 0.3 w ${ML} ${y-rh} m ${PW-MR} ${y-rh} l S\n`;
+        x = ML;
+        row.forEach((cell, ci) => {
+          const cw = colWidths[ci];
+          const lines = wrapText(cell.text, cw - 6);
+          const ff = cell.bold?'/F2':'/F1';
+          let ly = y - ROW_PAD/2 - LINE_H + 2;
+          lines.forEach(line => {
+            if (line !== '') s += `BT ${ff} ${FONT_SIZE} Tf ${rgb(cell.color||'1A1A1A')} ${x+3} ${ly} Td (${pdfEsc(line)}) Tj ET\n`;
+            ly -= LINE_H;
+          });
+          if(ci<row.length-1) s += `${rgb('D8E0EE',true)} 0.3 w ${x+cw} ${y} m ${x+cw} ${y-rh} l S\n`;
+          x += cw;
+        });
+      }
+      y -= rh;
+    });
+
+    s += `${rgb('1F3A5F',true)} 0.8 w ${ML} ${y} ${TW} ${PH-MT-y-4} re S\n`;
+    const pgTxt = pages.length>1 ? `Halaman ${pageNum} dari ${pages.length}  —  ` : '';
+    s += `BT /F1 6.5 Tf ${rgb('AAAAAA')} ${ML} ${MB-5} Td (${pdfEsc(pgTxt+'Generated by Life System Dashboard')}) Tj ET\n`;
+
+    return s;
+  }
+
+  // Build PDF binary
+  const objects = [];
+  const pageContentIds = [];
+  const pageIds = [];
+
+  // obj 1: catalog (filled later)
+  // obj 2: pages dict (filled later)
+  // obj 3: font Helvetica
+  // obj 4: font Helvetica-Bold
+
+  pages.forEach((pageRows, pi) => {
+    const streamStr = makeStream(pageRows, pi+1);
+    const streamBytes = new TextEncoder().encode(streamStr);
+    const contentId = objects.length + 5; // offset for catalog,pages,fonts
+    pageContentIds.push(contentId);
+    const pageId = contentId + 1;
+    pageIds.push(pageId);
+  });
+
+  // Now build actual PDF
+  let body = '';
+  const offsets = {};
+  let objNum = 0;
+
+  function writeObj(id, content) {
+    offsets[id] = body.length;
+    body += `${id} 0 obj\n${content}\nendobj\n`;
+  }
+
+  // Fonts
+  writeObj(3, `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>`);
+  writeObj(4, `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>`);
+
+  const pageObjIds = [];
+  pages.forEach((pageRows, pi) => {
+    const streamStr = makeStream(pageRows, pi+1);
+    const enc = new TextEncoder().encode(streamStr);
+    const contentId = 5 + pi*2;
+    const pageId = 6 + pi*2;
+
+    writeObj(contentId, `<< /Length ${enc.length} >>\nstream\n${streamStr}endstream`);
+    writeObj(pageId, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Contents ${contentId} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>`);
+    pageObjIds.push(pageId);
+  });
+
+  const nextId = 5 + pages.length*2;
+  writeObj(2, `<< /Type /Pages /Kids [${pageObjIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pages.length} >>`);
+  writeObj(1, `<< /Type /Catalog /Pages 2 0 R >>`);
+
+  // xref
+  const xrefOffset = body.length;
+  const allIds = [1,2,3,4,...pageObjIds.map((_,i)=>[5+i*2,6+i*2]).flat()];
+  const maxId = Math.max(...Object.keys(offsets).map(Number));
+
+  let xref = `xref\n0 ${maxId+1}\n`;
+  xref += `0000000000 65535 f \n`;
+  for(let i=1; i<=maxId; i++) {
+    if(offsets[i]!==undefined) {
+      xref += String(offsets[i]).padStart(10,'0') + ' 00000 n \n';
+    } else {
+      xref += `0000000000 65535 f \n`;
+    }
+  }
+
+  const trailer = `trailer\n<< /Size ${maxId+1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  const full = `%PDF-1.4\n${body}${xref}${trailer}`;
+  
+  const blob = new Blob([full], {type:'application/pdf'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportStudyToPDF() {
+  const all = getAllDays();
+  const allDays = Object.values(all).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const rows = [];
+  allDays.forEach(day => {
+    const tasks = day.study?.tasks||[];
+    if(tasks.length) {
+      rows.push([{text:'Tanggal: '+day.date, __sep:true}]);
+      tasks.forEach((task,i) => {
+        const prio = (task.priority||'').replace(/🔴 |🟡 |🟢 /g,'');
+        const prioColor = prio==='High'?'C0392B':prio==='Medium'?'D68910':'1E8449';
+        const status = task.done?'Selesai':(task.status||'');
+        const stColor = task.done||status==='Selesai'?'1E8449':status==='In Progress'?'1A5276':'555555';
+        const dl = task.deadline?new Date(task.deadline).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-';
+        rows.push([
+          {text:(i+1)+'', color:'888888'},
+          {text:day.date, color:'555555'},
+          {text:task.name||'', bold:true, color:'1A1A2E'},
+          {text:task.subject||'-', color:'2C3E6B'},
+          {text:dl, color:'555555'},
+          {text:prio, bold:true, color:prioColor},
+          {text:status, bold:true, color:stColor},
+          {text:task.notes||'-', color:'444444'}
+        ]);
+      });
+    }
+  });
+  const total = rows.filter(r=>!r[0]?.__sep).length;
+  const done = rows.filter(r=>!r[0]?.__sep && (r[6]?.text==='Selesai'||r[6]?.text==='Done')).length;
+  exportToPDF({
+    title:'Daftar Tugas',
+    subtitle:'Life System Dashboard',
+    date:'Diekspor: '+new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
+    summary:`Total: ${total} tugas  |  Selesai: ${done}  |  Belum: ${total-done}`,
+    headers:['No','Tanggal','Nama Tugas','Subject','Deadline','Priority','Status','Catatan'],
+    colRatios:[0.04,0.09,0.19,0.13,0.1,0.08,0.09,0.28],
+    rows, filename:'tugas-all.pdf'
+  });
+}
+
+function exportReadingToPDF() {
+  const all = getAllDays();
+  const allDays = Object.values(all).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const rows = [];
+  allDays.forEach(day => {
+    const entries = day.reading?.entries||[];
+    if(entries.length) {
+      rows.push([{text:'Tanggal: '+day.date, __sep:true}]);
+      entries.forEach((e,i) => {
+        const stColor = e.status==='Selesai'?'1E8449':e.status==='Sedang Dibaca'?'1A5276':'D68910';
+        const pct = e.total&&e.pages?' ('+Math.min(100,Math.round((+e.pages/+e.total)*100))+'%)':'';
+        const hal = (e.pages||'0')+(e.total?'/'+e.total:'')+pct;
+        const insight = [e.insight, e.notes?'Refleksi: '+e.notes:''].filter(Boolean).join(' | ');
+        rows.push([
+          {text:(i+1)+'', color:'888888'},
+          {text:day.date, color:'555555'},
+          {text:e.bookName||'', bold:true, color:'1A1A2E'},
+          {text:e.genre||'-', color:'2C3E6B'},
+          {text:hal, color:'555555'},
+          {text:e.status||'', bold:true, color:stColor},
+          {text:insight||'-', color:'333333'}
+        ]);
+      });
+    }
+  });
+  const total = rows.filter(r=>!r[0]?.__sep).length;
+  const selesai = rows.filter(r=>!r[0]?.__sep && r[5]?.text==='Selesai').length;
+  exportToPDF({
+    title:'Reading Log',
+    subtitle:'Life System Dashboard',
+    date:'Diekspor: '+new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
+    summary:`Total: ${total} buku  |  Selesai: ${selesai}  |  Belum selesai: ${total-selesai}`,
+    headers:['No','Tanggal','Judul Buku','Genre','Halaman','Status','Insight & Refleksi'],
+    colRatios:[0.04,0.09,0.2,0.1,0.09,0.1,0.38],
+    rows, filename:'reading-log-all.pdf'
+  });
+}
+
+function exportLearningToPDF() {
+  const all = getAllDays();
+  const allDays = Object.values(all).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const rows = [];
+  allDays.forEach(day => {
+    const entries = day.learning?.entries||[];
+    if(entries.length) {
+      rows.push([{text:'Tanggal: '+day.date, __sep:true}]);
+      entries.forEach((e,i) => {
+        const catColor = {Skill:'7D3C98',Bisnis:'D68910',Agama:'1E8449',Kesehatan:'B03A2E',Teknologi:'1A5276',Lainnya:'555555'}[e.category]||'555555';
+        rows.push([
+          {text:(i+1)+'', color:'888888'},
+          {text:day.date, color:'555555'},
+          {text:e.topic||'', bold:true, color:'1A1A2E'},
+          {text:e.source||'-', color:'2C3E6B'},
+          {text:e.category||'', bold:true, color:catColor},
+          {text:e.notes||'-', color:'333333'},
+          {text:e.reflection||'-', color:'333333'}
+        ]);
+      });
+    }
+  });
+  const total = rows.filter(r=>!r[0]?.__sep).length;
+  exportToPDF({
+    title:'Learning Log',
+    subtitle:'Life System Dashboard',
+    date:'Diekspor: '+new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
+    summary:`Total: ${total} topik dipelajari dari semua waktu`,
+    headers:['No','Tanggal','Topik','Source','Kategori','Catatan / Key Points','Rencana Apply'],
+    colRatios:[0.04,0.09,0.17,0.13,0.1,0.235,0.235],
+    rows, filename:'learning-log-all.pdf'
+  });
+}
+
+
+restoreUI();
+</script>
+</body>
+</html>
